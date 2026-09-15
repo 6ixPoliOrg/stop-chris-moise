@@ -207,7 +207,7 @@ function Index() {
 
       <main id="top">
         <section className="campaign-hero" aria-labelledby="hero-title">
-          <img className="campaign-hero-image" src={heroImage} width={1280} height={1600} alt="A stern political figure with the Toronto skyline at night" />
+          <img className="campaign-hero-image" src={heroImage} width={1672} height={941} alt="A stern political figure with the Toronto skyline at night" />
           <div className="page-wrap hero-copy">
             <p className="eyebrow">Toronto Centre <span>•</span> Municipal election <span>•</span> October 26, 2026</p>
             <p className="candidate-name">Chris Moise</p>
