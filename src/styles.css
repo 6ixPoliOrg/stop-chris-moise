@@ -83,7 +83,7 @@ button, input, textarea { font: inherit; }
 
 .campaign-hero { position: relative; display: grid; min-height: min(90svh, 61rem); align-items: end; overflow: hidden; background: var(--ink); color: var(--white); }
 .campaign-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 28%, color-mix(in oklab, var(--ink) 25%, transparent) 48%, color-mix(in oklab, var(--ink) 96%, transparent) 100%); }
-.campaign-hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 78% 30%; }
+.campaign-hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 92% 28%; }
 .hero-copy { position: relative; z-index: 1; padding-top: 15rem; padding-bottom: 2.5rem; }
 .hero-copy .eyebrow { max-width: 35rem; color: var(--paper); }
 .hero-copy .eyebrow span { padding-inline: .2rem; }
