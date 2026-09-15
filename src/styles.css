@@ -168,9 +168,10 @@ form > .campaign-button { margin-top: .55rem; }
 
 @media (min-width: 64rem) {
   :root { --wrap: 50rem; }
-  .campaign-hero { min-height: min(90svh, 61rem); }
-  .campaign-hero-image { object-position: 62% 30%; }
-  .hero-copy { max-width: 58rem; padding-top: 15rem; }
+  .campaign-hero { display: grid; min-height: min(90svh, 61rem); align-items: end; }
+  .campaign-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in oklab, var(--ink) 35%, transparent) 0%, transparent 24%, color-mix(in oklab, var(--ink) 30%, transparent) 55%, color-mix(in oklab, var(--ink) 97%, transparent) 100%); }
+  .campaign-hero-image { position: absolute; inset: 0; height: 100%; max-height: none; object-position: 62% 30%; }
+  .hero-copy { max-width: 58rem; padding: 0 0 2.5rem; z-index: 1; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
