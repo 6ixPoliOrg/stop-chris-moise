@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { PasswordGate } from "@/components/PasswordGate";
 import heroImage from "@/assets/campaign-hero.jpg";
 import townhallImage from "@/assets/townhall.jpg";
 import squareImage from "@/assets/square.jpg";
@@ -21,10 +22,10 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Stop Chris Moise | Toronto Centre 2026" },
       { property: "og:description", content: "An independent residents’ campaign presenting the record in plain language, with sources." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "/" },
+      { property: "og:url", content: import.meta.env.BASE_URL },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: import.meta.env.BASE_URL }],
   }),
 });
 
@@ -182,7 +183,7 @@ function Index() {
   };
 
   return (
-    <>
+    <PasswordGate>
       <a className="skip-link" href="#record">Skip to the record</a>
       <div className="campaign-banner" role="note">Stop Moise is an independent residents’ campaign in Toronto Centre. It is not affiliated with the City of Toronto.</div>
       <header className="site-header">
@@ -269,6 +270,6 @@ function Index() {
       </main>
 
       <footer className="site-footer" id="sources"><div className="page-wrap"><Wordmark /><p>Stop Moise is an independent residents’ campaign in Toronto Centre. It is not affiliated with the City of Toronto.</p><p>This page is political advocacy. It summarizes news reports, public meetings, Council records, and the Integrity Commissioner’s March 20, 2026 finding. A donation is not proof of a crime. Where this page describes conflict-of-interest concerns, it is raising a question about trust, not announcing a court verdict.</p><h2>Sources</h2><ol><li id="src-cbc">CBC News, September 2024 campaign-finance reporting <small>Link pending</small></li><li id="src-sun">Toronto Sun, Moss Park Arena <small>Link pending</small></li><li id="src-ic">City of Toronto Integrity Commissioner finding, March 20, 2026 <small>Link pending</small></li><li id="src-budget">Council budget and expense records <small>Link pending</small></li><li id="src-chw">City Hall Watcher, Chow voting alignment <small>Link pending</small></li></ol><p className="election-date">Municipal election: <strong>October 26, 2026.</strong></p></div></footer>
-    </>
+    </PasswordGate>
   );
 }
