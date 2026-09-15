@@ -32,13 +32,15 @@ jobs:
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
       - name: Prepare static output
+        env:
+          REPO: ${{ github.event.repository.name }}
         run: |
-          cp ".output/public/${{ github.event.repository.name }}/index.html" .output/public/404.html
-          touch .output/public/.nojekyll
+          cp ".output/public/$REPO/index.html" ".output/public/$REPO/404.html"
+          touch ".output/public/$REPO/.nojekyll"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .output/public
+          path: .output/public/${{ github.event.repository.name }}
   deploy:
     needs: build
     runs-on: ubuntu-latest
