@@ -149,27 +149,135 @@ const issues: Issue[] = [
   },
 ];
 
-function Wordmark() {
-  return <span className="wordmark"><span className="wordmark-stop">Stop</span><span>Chris Moise</span></span>;
+const pad = (n: number) => String(n).padStart(2, "0");
+const theme = (n: number) => (["t-purple", "t-paper", "t-yellow"] as const)[(n - 1) % 3];
+
+function pageUrl(hash = "") {
+  if (typeof window === "undefined") return "";
+  return `${window.location.origin}${window.location.pathname}${hash}`;
 }
 
-function Index() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [formState, setFormState] = useState<"idle" | "success" | "error">("idle");
-  const closeRef = useRef<HTMLButtonElement>(null);
+/** Share / Post / Email for one issue. */
+function useShare() {
+  const [note, setNote] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const flash = (msg: string) => {
+    setNote(msg);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setNote(null), 2500);
+  };
+  const share = async (title: string, url: string) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch {
+        /* cancelled */
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      flash("Link copied");
+    } catch {
+      flash("Copy failed");
+    }
+  };
+  const post = (title: string, url: string) => {
+    const intent = `https://x.com/intent/post?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`;
+    window.open(intent, "_blank", "noopener,noreferrer");
+  };
+  const email = (title: string, url: string) => {
+    window.location.href = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${title}\n\n${url}`)}`;
+  };
+  return { note, share, post, email };
+}
 
+function Wordmark({ href }: { href?: string }) {
+  const inner = <><span className="stop">Stop</span><span>Chris Moise</span></>;
+  return href ? <a className="wordmark" href={href} aria-label="Stop Chris Moise home">{inner}</a> : <span className="wordmark">{inner}</span>;
+}
+
+function IssueRow({ issue, n }: { issue: Issue; n: number }) {
+  const { note, share, post, email } = useShare();
+  const id = `issue-${n}`;
+  const url = () => pageUrl(`#${id}`);
+  return (
+    <article id={id} data-claim={n} className={`claim ${theme(n)}${n % 2 === 0 ? " flip" : ""}`} aria-labelledby={`${id}-title`}>
+      <div className="claim-photo"><img src={issue.image} alt={issue.alt} width={1200} height={800} loading="lazy" decoding="async" /></div>
+      <div className="claim-copy">
+        <div className="claim-meta"><span className="badge">{pad(n)} / 10</span><span>{issue.topic}</span></div>
+        <h2 id={`${id}-title`}>{issue.title}</h2>
+        <div className="claim-body">
+          {issue.happened && <><h3 className="sub dash">What happened</h3>{issue.happened}</>}
+          <h3 className="sub dash">Why it matters</h3>{issue.matters}
+          {issue.simple && <div className="simple"><h3 className="sub">The simple version</h3><p>{issue.simple}</p></div>}
+        </div>
+        <p className="sources"><strong>Source:</strong><a href={issue.sourceId ? `#${issue.sourceId}` : "#sources"}>{issue.source}</a>{!issue.sourceId && <small className="pending">Link pending</small>}</p>
+        <div className="share-row">
+          <button type="button" onClick={() => share(issue.title, url())}>Share</button>
+          <button type="button" onClick={() => post(issue.title, url())}>Post</button>
+          <button type="button" onClick={() => email(issue.title, url())}>Email</button>
+          {note && <span className="share-note" role="status">{note}</span>}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function Nav({ active }: { active: number }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-    if (menuOpen) closeRef.current?.focus();
-    const escape = (event: KeyboardEvent) => event.key === "Escape" && setMenuOpen(false);
-    document.addEventListener("keydown", escape);
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    const onClick = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onClick);
     return () => {
-      document.body.style.overflow = "";
-      document.removeEventListener("keydown", escape);
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onClick);
     };
   }, [menuOpen]);
+  const close = () => setMenuOpen(false);
 
-  const closeMenu = () => setMenuOpen(false);
+  return (
+    <nav className="nav" aria-label="Site">
+      <div className="nav-bar">
+        <Wordmark href="#top" />
+        <div className="menu-wrap" ref={wrapRef}>
+          <button type="button" className="menu-toggle" aria-expanded={menuOpen} aria-controls="record-menu" onClick={() => setMenuOpen((o) => !o)}>
+            The Record <span className="caret">{menuOpen ? "▲" : "▼"}</span>
+          </button>
+          {menuOpen && (
+            <div className="menu-panel" id="record-menu">
+              <a href="#case" onClick={close}><span>—</span><span>The case</span></a>
+              {issues.map((issue, i) => (
+                <a key={issue.title} href={`#issue-${i + 1}`} onClick={close}><span>{pad(i + 1)}</span><span>{issue.topic}</span></a>
+              ))}
+              <a href="#sources" onClick={close}><span>—</span><span>Sources</span></a>
+            </div>
+          )}
+        </div>
+        <div className="ticks">
+          {issues.map((issue, i) => {
+            const n = i + 1;
+            return (
+              <a key={issue.title} href={`#issue-${n}`} title={issue.topic} className={n === active ? "on" : n < active ? "past" : undefined} aria-current={n === active ? "location" : undefined}>{pad(n)}</a>
+            );
+          })}
+        </div>
+        <span className="nav-spacer" />
+        <a className="nav-join" href="#join">Join us</a>
+      </div>
+    </nav>
+  );
+}
+
+function Join() {
+  const [formState, setFormState] = useState<"idle" | "success" | "error">("idle");
   const submitForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -178,98 +286,145 @@ function Index() {
       form.reportValidity();
       return;
     }
+    // TODO: connect to the campaign's sign-up service. Nothing is transmitted yet.
     setFormState("success");
     form.reset();
   };
+  return (
+    <section className="join" id="join" aria-labelledby="join-title">
+      <div className="inner">
+        <div className="join-copy">
+          <p className="label">Join the coalition</p>
+          <h2 id="join-title">Help us finish this.</h2>
+          <p className="lede">Leave your name and how to reach you. Tell us your story if you have one. We will use this list to keep residents informed and organized through election day.</p>
+        </div>
+        {formState === "success" ? (
+          <div className="joined" role="status"><div className="big">You’re in.</div><p>We’ll be in touch. Tell one neighbour before you close this tab.</p></div>
+        ) : (
+          <form className="join-form" onSubmit={submitForm} noValidate>
+            <label className="sr-only" htmlFor="name">Name</label>
+            <input id="name" name="name" type="text" autoComplete="name" placeholder="Name" required />
+            <label className="sr-only" htmlFor="email">Email</label>
+            <input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="Email" required />
+            <label className="sr-only" htmlFor="neighbourhood">Neighbourhood or postal code</label>
+            <input id="neighbourhood" name="neighbourhood" type="text" autoComplete="postal-code" placeholder="Neighbourhood or postal code" />
+            <label className="sr-only" htmlFor="story">Optional: What have you seen?</label>
+            <textarea id="story" name="story" placeholder="Optional: What have you seen?" />
+            <label className="check-field"><input type="checkbox" name="updates" /><span>I want updates about the October 26, 2026 election.</span></label>
+            <label className="check-field"><input type="checkbox" name="ack" required /><span>I understand this is a political campaign, not a City of Toronto website.</span></label>
+            <button type="submit">Join the coalition <span aria-hidden="true">→</span></button>
+            {formState === "error" && <p className="form-error" role="alert">Check the required fields and try again.</p>}
+          </form>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Page() {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset["claim"]));
+        }
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    document.querySelectorAll("[data-claim]").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
 
   return (
-    <PasswordGate>
-      <a className="skip-link" href="#record">Skip to the record</a>
-      <div className="campaign-banner" role="note">Stop Moise is an independent residents’ campaign in Toronto Centre. It is not affiliated with the City of Toronto.</div>
-      <header className="site-header">
-        <div className="site-bar page-wrap">
-          <a href="#top" aria-label="Stop Chris Moise home"><Wordmark /></a>
-          <button className="menu-trigger" type="button" aria-controls="site-menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
-            <span className="menu-lines" aria-hidden="true"><i /><i /><i /></span><span>Menu</span>
-          </button>
-        </div>
-      </header>
-
-      <div id="site-menu" className={`site-menu ${menuOpen ? "is-open" : ""}`} aria-hidden={!menuOpen}>
-        <div className="menu-top"><Wordmark /><button ref={closeRef} className="menu-close" type="button" onClick={closeMenu}>Close</button></div>
-        <nav aria-label="Site navigation">
-          <a href="#case" onClick={closeMenu}>The case</a>
-          <a href="#record" onClick={closeMenu}>The record</a>
-          <a href="#sources" onClick={closeMenu}>Sources</a>
-          <a className="menu-join" href="#join" onClick={closeMenu}>Join the coalition</a>
-        </nav>
-        <p className="menu-fine">Municipal election: October 26, 2026. Toronto Centre (Ward 13).</p>
-      </div>
+    <div className="page">
+      <a className="skip" href="#record">Skip to the record</a>
+      <div className="disclaimer" role="note">Stop Moise is an independent residents’ campaign in Toronto Centre. It is not affiliated with the City of Toronto.</div>
+      <Nav active={active} />
 
       <main id="top">
-        <section className="campaign-hero" aria-labelledby="hero-title">
-          <img className="campaign-hero-image" src={heroImage} width={1672} height={941} alt="A stern political figure with the Toronto skyline at night" />
-          <div className="page-wrap hero-copy">
-            <p className="eyebrow">Toronto Centre <span>•</span> Municipal election <span>•</span> October 26, 2026</p>
+        <header className="hero" aria-labelledby="hero-title">
+          <div className="hero-copy">
+            <p className="label">Toronto Centre <span>•</span> Municipal election <span>•</span> October 26, 2026</p>
             <p className="candidate-name">Chris Moise</p>
-            <h1 id="hero-title"><span>A disaster</span><strong>all around</strong></h1>
+            <h1 id="hero-title"><span>A disaster</span><span className="r">all around</span></h1>
             <p className="hero-sub">Chris Moise’s four years as Toronto Centre (Ward 13) Councillor have been a failure for residents.</p>
           </div>
-        </section>
+          <div className="hero-photo">
+            <img src={heroImage} width={1672} height={941} alt="A stern political figure with the Toronto skyline at night" fetchPriority="high" />
+          </div>
+        </header>
 
-        <section className="case-section" id="case" aria-labelledby="case-title">
-          <div className="page-wrap">
-            <h2 className="eyebrow" id="case-title">The case</h2>
-            <p className="lede">A councillor’s job should be simple: listen to residents, spend taxpayers’ money responsibly, solve problems, and treat people with respect. Instead, residents have too often found themselves ignored, dismissed, or attacked when they raise legitimate concerns.</p>
-            <p>When constituents speak up, they deserve answers and solutions—not insults, personal attacks, or political games.</p>
-            <p>Moise’s confrontational approach and hostile exchanges with constituents have made him one of the most polarizing figures at City Hall. His record has left many residents asking a simple question: <strong>Is this really the representation Ward 13 deserves?</strong></p>
-            <p>And the state of the ward speaks for itself. Residents are dealing with growing concerns about crime, cleanliness, public drug use, disorder, and parks and public spaces that no longer feel welcoming or safe for everyone.</p>
-            <p>After four years, the question is not whether Chris Moise deserves another term.</p>
-            <p><strong>It’s whether Ward 13 can afford another four years of the same.</strong></p>
-            <blockquote className="verdict"><span>Ward 13 deserves better.</span><strong>He does not deserve to be rewarded with re-election.</strong></blockquote>
-            <div className="campaign-actions"><a className="campaign-button button-red" href="#record">See the record <span aria-hidden="true">→</span></a><a className="campaign-button button-outline" href="#join">Join the coalition</a></div>
-            <aside className="campaign-note"><strong>Note</strong><span>This is a concerned citizen website. Always check the sources at the bottom.</span></aside>
+        <section className="case" id="case" aria-labelledby="case-title">
+          <div className="inner">
+            <h2 id="case-title">The case</h2>
+            <div className="case-copy">
+              <p className="lede">A councillor’s job should be simple: listen to residents, spend taxpayers’ money responsibly, solve problems, and treat people with respect. Instead, residents have too often found themselves ignored, dismissed, or attacked when they raise legitimate concerns.</p>
+              <p>When constituents speak up, they deserve answers and solutions—not insults, personal attacks, or political games.</p>
+              <p>Moise’s confrontational approach and hostile exchanges with constituents have made him one of the most polarizing figures at City Hall. His record has left many residents asking a simple question: <strong>Is this really the representation Ward 13 deserves?</strong></p>
+              <p>And the state of the ward speaks for itself. Residents are dealing with growing concerns about crime, cleanliness, public drug use, disorder, and parks and public spaces that no longer feel welcoming or safe for everyone.</p>
+              <p>After four years, the question is not whether Chris Moise deserves another term.</p>
+              <p><strong>It’s whether Ward 13 can afford another four years of the same.</strong></p>
+              <blockquote className="verdict"><span>Ward 13 deserves better.</span><strong>He does not deserve to be rewarded with re-election.</strong></blockquote>
+              <div className="btn-row"><a className="btn btn-red" href="#record">See the record <span aria-hidden="true">→</span></a><a className="btn btn-outline-ink" href="#join">Join the coalition</a></div>
+              <aside className="campaign-note"><strong>Note</strong><span>This is a concerned citizen website. Always check the sources at the bottom.</span></aside>
+            </div>
           </div>
         </section>
 
         <section id="record" aria-labelledby="record-title">
-          <div className="record-intro page-wrap"><p className="eyebrow">Four years on Council</p><h2 id="record-title">The record</h2><p>Ten issues. Each one has what happened, why it matters, and a plain-language version. Sources are listed at the bottom of the page.</p></div>
-          {issues.map((issue, index) => (
-            <article className="issue page-wrap" id={`issue-${index + 1}`} key={issue.title}>
-              <img className="issue-image" src={issue.image} alt={issue.alt} width={1200} height={800} loading="lazy" />
-              <div className="issue-meta"><span className="issue-number">{String(index + 1).padStart(2, "0")} <em>/ 10</em></span><span className="eyebrow">{issue.topic}</span></div>
-              <h2>{issue.title}</h2>
-              {issue.happened && <><h3>What happened</h3>{issue.happened}</>}
-              <h3>Why it matters</h3>{issue.matters}
-              {issue.simple && <div className="simple-version"><h3>The simple version</h3><p>{issue.simple}</p></div>}
-              <p className="source-line"><span>Source:</span> <a href={issue.sourceId ? `#${issue.sourceId}` : "#sources"}>{issue.source}</a>{!issue.sourceId && <small>Link pending</small>}</p>
-            </article>
-          ))}
+          <div className="record-intro">
+            <div className="inner">
+              <div><p className="label">Four years on Council</p><h2 id="record-title">The record</h2></div>
+              <p className="lede">Ten issues. Each one has what happened, why it matters, and a plain-language version. Sources are listed at the bottom of the page.</p>
+            </div>
+          </div>
+          {issues.map((issue, index) => <IssueRow key={issue.title} issue={issue} n={index + 1} />)}
         </section>
 
-        <section className="vote-band" aria-labelledby="vote-title">
+        <section className="vote" aria-labelledby="vote-title">
           <img src={skylineImage} width={1600} height={800} loading="lazy" alt="Toronto skyline at night" />
-          <div className="page-wrap vote-copy"><p className="eyebrow">Want to stop Chris Moise?</p><h2 id="vote-title"><span>On October 26,</span><strong>vote him out.</strong></h2><p>If you have been dismissed, insulted, or ignored, you are not alone. Join the coalition. Share the record. Tell your neighbours. Show up in October.</p><a className="campaign-button button-red" href="#join">I’m in <span aria-hidden="true">→</span></a></div>
-        </section>
-
-        <section className="join-section" id="join" aria-labelledby="join-title">
-          <div className="page-wrap"><p className="eyebrow">Join the coalition</p><h2 id="join-title">Help us finish this.</h2><p>Leave your name and how to reach you. Tell us your story if you have one. We will use this list to keep residents informed and organized through election day.</p>
-            <form onSubmit={submitForm} noValidate>
-              <div className="form-field"><label htmlFor="name">Name</label><input id="name" name="name" type="text" autoComplete="name" required /></div>
-              <div className="form-field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" autoComplete="email" inputMode="email" required /></div>
-              <div className="form-field"><label htmlFor="neighbourhood">Neighbourhood or postal code</label><input id="neighbourhood" name="neighbourhood" type="text" autoComplete="postal-code" /></div>
-              <div className="form-field"><label htmlFor="story">Optional: What have you seen?</label><textarea id="story" name="story" /></div>
-              <label className="check-field"><input type="checkbox" name="updates" /><span>I want updates about the October 26, 2026 election.</span></label>
-              <label className="check-field"><input type="checkbox" name="ack" required /><span>I understand this is a political campaign, not a City of Toronto website.</span></label>
-              <button className="campaign-button button-red" type="submit">Join the coalition <span aria-hidden="true">→</span></button>
-              {formState === "success" && <p className="form-message success" role="status">You’re in. We’ll be in touch. Tell one neighbour before you close this tab.</p>}
-              {formState === "error" && <p className="form-message error" role="alert">Check the required fields and try again.</p>}
-            </form>
+          <div className="inner">
+            <p className="label">Want to stop Chris Moise?</p>
+            <h2 id="vote-title"><span>On October 26,</span><span className="ink">vote him out.</span></h2>
+            <p>If you have been dismissed, insulted, or ignored, you are not alone. Join the coalition. Share the record. Tell your neighbours. Show up in October.</p>
+            <a className="btn btn-ink" href="#join">I’m in <span aria-hidden="true">→</span></a>
           </div>
         </section>
+
+        <Join />
       </main>
 
-      <footer className="site-footer" id="sources"><div className="page-wrap"><Wordmark /><p>Stop Moise is an independent residents’ campaign in Toronto Centre. It is not affiliated with the City of Toronto.</p><p>This page is political advocacy. It summarizes news reports, public meetings, Council records, and the Integrity Commissioner’s March 20, 2026 finding. A donation is not proof of a crime. Where this page describes conflict-of-interest concerns, it is raising a question about trust, not announcing a court verdict.</p><h2>Sources</h2><ol><li id="src-cbc">CBC News, September 2024 campaign-finance reporting <small>Link pending</small></li><li id="src-sun">Toronto Sun, Moss Park Arena <small>Link pending</small></li><li id="src-ic">City of Toronto Integrity Commissioner finding, March 20, 2026 <small>Link pending</small></li><li id="src-budget">Council budget and expense records <small>Link pending</small></li><li id="src-chw">City Hall Watcher, Chow voting alignment <small>Link pending</small></li></ol><p className="election-date">Municipal election: <strong>October 26, 2026.</strong></p></div></footer>
+      <footer className="foot" id="sources">
+        <div className="inner">
+          <div className="foot-top">
+            <Wordmark />
+            <div className="foot-links"><a href="#case">The case</a><a href="#record">The record</a><a href="#join">Join the coalition</a></div>
+          </div>
+          <p className="foot-note">Stop Moise is an independent residents’ campaign in Toronto Centre. It is not affiliated with the City of Toronto.</p>
+          <p className="foot-note">This page is political advocacy. It summarizes news reports, public meetings, Council records, and the Integrity Commissioner’s March 20, 2026 finding. A donation is not proof of a crime. Where this page describes conflict-of-interest concerns, it is raising a question about trust, not announcing a court verdict.</p>
+          <div className="foot-sources">
+            <h2>Sources</h2>
+            <ol>
+              <li id="src-cbc">CBC News, September 2024 campaign-finance reporting <small className="pending">Link pending</small></li>
+              <li id="src-sun">Toronto Sun, Moss Park Arena <small className="pending">Link pending</small></li>
+              <li id="src-ic">City of Toronto Integrity Commissioner finding, March 20, 2026 <small className="pending">Link pending</small></li>
+              <li id="src-budget">Council budget and expense records <small className="pending">Link pending</small></li>
+              <li id="src-chw">City Hall Watcher, Chow voting alignment <small className="pending">Link pending</small></li>
+            </ol>
+          </div>
+          <p className="election-date">Municipal election: <strong>October 26, 2026.</strong></p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function Index() {
+  return (
+    <PasswordGate>
+      <Page />
     </PasswordGate>
   );
 }
