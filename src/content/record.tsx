@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 export { default as caseWardImage } from "@/assets/issues/case-state-of-ward.jpg";
+export { default as caseWardVideo } from "@/assets/videos/case-state-of-ward.mp4";
+import leadershipVideo from "@/assets/videos/01-leadership.mp4";
+import barbaraHallVideo from "@/assets/videos/02-barbara-hall-park.mp4";
+import sankofaVideo from "@/assets/videos/03-sankofa-square.mp4";
+import publicHealthVideo from "@/assets/videos/08-public-health.mp4";
 import leadershipImage from "@/assets/issues/01-leadership.jpg";
 import barbaraHallImage from "@/assets/issues/02-barbara-hall-park.jpg";
 import sankofaImage from "@/assets/issues/03-sankofa-square.jpg";
@@ -19,6 +24,10 @@ export type Issue = {
   imageWidth: number;
   imageHeight: number;
   alt: string;
+  /** Optional video; the image becomes its cover with a play button. */
+  video?: string;
+  videoDuration?: string;
+  videoTitle?: string;
   intro?: React.ReactNode;
   happenedLabel?: string;
   happened?: React.ReactNode;
@@ -33,6 +42,9 @@ export const issues: Issue[] = [
     topic: "Leadership and conduct",
     title: "Name-calling is not a public service.",
     image: leadershipImage,
+    video: leadershipVideo,
+    videoDuration: "2:35",
+    videoTitle: "Residents on Chris Moise",
     imageWidth: 1400,
     imageHeight: 933,
     alt: "Chris Moise speaking in the Council chamber beside the headline “MPP cuts Chris Moise loose” and a Kristyn Wong-Tam quote that he “has disappointed some folks in my community”",
@@ -44,6 +56,9 @@ export const issues: Issue[] = [
     topic: "Barbara Hall Park",
     title: "The Tragedy of Chris Moise.",
     image: barbaraHallImage,
+    video: barbaraHallVideo,
+    videoDuration: "0:21",
+    videoTitle: "CBC News: reporter asks Moise about drug use in Barbara Hall Park",
     imageWidth: 1385,
     imageHeight: 1136,
     alt: "CBC News headline “Complaints about drug use, violence persist at Barbara Hall Park as Toronto considers its response” over a night photo of people gathered on the park’s benches and pavement",
@@ -58,10 +73,13 @@ export const issues: Issue[] = [
     topic: "Renaming Yonge-Dundas Square to Sankofa Square",
     title: "A $2.7 million name change most people did not ask for.",
     image: sankofaImage,
+    video: sankofaVideo,
+    videoDuration: "0:35",
+    videoTitle: "Sankofa Square",
     imageWidth: 1400,
     imageHeight: 815,
     alt: "News graphic reading “Most Torontonians disapprove of new name chosen for Yonge-Dundas Square: poll” over a protest at Yonge and Dundas",
-    happened: <><p>Moise was the main advocate for renaming Yonge-Dundas Square and TTC stations. Here are the facts:</p><ul><li>Residents were not properly consulted.</li><li>The bill was approximately $2.7 million, and mostly public money.</li><li>He incorrectly accused Henry Dundas of being a slave owner, when in fact Henry Dundas was a “practical abolitionist” who worked to end slavery. Moise called him “Minister of Immigration and Slavery”—a cabinet job that never existed.</li><li>He backed a Ghanaian name—“Sankofa”—with no historical tie to Toronto. Ironically, Ghana has recently passed legislation criminalizing same-sex acts, with offenders facing possible imprisonment.</li><li>Over 75% of residents opposed the renaming of Yonge-Dundas Square to Sankofa Square.</li><li>A resident brought a 30,000-signature petition against the renaming. Moise called that person a “racist.”</li><li>Two long-time and prominent Yonge-Dundas Square board members resigned in protest of the renaming. In January 2025, Moise still called the episode a “success story.”</li><li>At a February 2024 TTC meeting, witnesses said he insulted members of the public who questioned the plan.</li><li>Since the renaming, Sankofa Square’s revenues have plummeted and the square is a public disaster.</li></ul></>,
+    happened: <><p>Moise was the main advocate for renaming Yonge-Dundas Square and TTC stations. Here are the facts:</p><ul><li>Residents were not properly consulted.</li><li>The bill was approximately $2.7 million, and mostly public money.</li><li>He incorrectly accused Henry Dundas of being a slave owner, when in fact Henry Dundas was a “practical abolitionist” who worked to end slavery. Moise called him “Minister of Immigration and Slavery”—a cabinet job that never existed.</li><li>He backed a Ghanaian name—“Sankofa”—with no historical tie to Toronto. Ironically, Ghana has recently passed legislation criminalizing same-sex acts, with offenders facing possible imprisonment.</li><li><a href="https://www.ctvnews.ca/toronto/article/public-support-strikingly-bad-for-renaming-of-yonge-dundas-square-to-sankofa-square-poll/" target="_blank" rel="noopener noreferrer">Over 70% of residents opposed the renaming of Yonge-Dundas Square to Sankofa Square.</a></li><li>A resident brought a 30,000-signature petition against the renaming. Moise called that person a “racist.”</li><li>Two long-time and prominent Yonge-Dundas Square board members resigned in protest of the renaming. In January 2025, Moise still called the episode a “success story.”</li><li>At a February 2024 TTC meeting, witnesses said he insulted members of the public who questioned the plan.</li><li>Since the renaming, Sankofa Square’s revenues have plummeted and the square is a public disaster.</li></ul></>,
     matters: <p>Street names and station names belong to the whole city. Changing them should be honest, worth the cost, and based on listening—not on rewriting history or insulting people who object.</p>,
     simple: "Chris Moise spent a huge amount of public money to change signs, skipped a real conversation with the public, got the history wrong, and then insulted people who said no.",
     source: "Council records and news reports",
@@ -122,6 +140,9 @@ export const issues: Issue[] = [
     topic: "Public-health policy",
     title: "He backed injection sites next to parks and kids’ spaces.",
     image: publicHealthImage,
+    video: publicHealthVideo,
+    videoDuration: "2:58",
+    videoTitle: "Residents question Chris Moise on harm reduction at his town hall",
     imageWidth: 1400,
     imageHeight: 876,
     alt: "Discarded needles and debris on a Toronto sidewalk under a quote from Chris Moise: “The province should be expanding safe consumption sites”",
@@ -212,18 +233,3 @@ export function useShare() {
   };
   return { note, share, post, email };
 }
-
-export type Source = { id: string; label: string; url?: string };
-
-/** Footer source list. Add a `url` to replace a “Link pending” tag. */
-export const sources: Source[] = [
-  { id: "src-cbc", label: "CBC News, September 2024 campaign-finance reporting" },
-  { id: "src-cbc-bhp", label: "CBC News, September 3, 2026, Barbara Hall Park" },
-  { id: "src-sun", label: "Toronto Sun, Moss Park Arena" },
-  { id: "src-sun-expenses", label: "Toronto Sun, councillor expenses (Moise total $1,081,639)" },
-  { id: "src-sun-decals", label: "Toronto Sun, August 31, 2025, sidewalk decals" },
-  { id: "src-ic", label: "City of Toronto Integrity Commissioner finding, March 20, 2026; CBC News, March 22, 2026" },
-  { id: "src-raves", label: "Aidan Chamandy, April 23, 2025, rave-motion withdrawal" },
-  { id: "src-budget", label: "Council budget and expense records" },
-  { id: "src-chw", label: "City Hall Watcher, Chow voting alignment" },
-];

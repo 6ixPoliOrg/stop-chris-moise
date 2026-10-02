@@ -22,7 +22,5 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
     prerender: { enabled: true, crawlLinks: true },
-    // /v2 (design comparison page) is not linked from "/", so list it explicitly.
-    pages: [{ path: "/v2" }],
   },
 });

@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { PasswordGate } from "@/components/PasswordGate";
 import heroImage from "@/assets/campaign-hero.jpg";
 import skylineImage from "@/assets/skyline.jpg";
-import { issues, pad, pageUrl, useShare, caseWardImage, type Issue } from "@/content/record";
+import { issues, pad, pageUrl, useShare, caseWardImage, caseWardVideo, type Issue } from "@/content/record";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -28,13 +28,67 @@ function Wordmark({ href }: { href?: string }) {
   return href ? <a className="wordmark" href={href} aria-label="Stop Chris Moise home">{inner}</a> : <span className="wordmark">{inner}</span>;
 }
 
+/** Cover image with a play button; opens the video in a modal dialog. */
+function VideoCover({ video, title, duration, children }: { video: string; title: string; duration?: string | undefined; children: ReactNode }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const open = () => {
+    dialogRef.current?.showModal();
+    void videoRef.current?.play().catch(() => {});
+  };
+  const stop = () => {
+    const v = videoRef.current;
+    if (v) {
+      v.pause();
+      v.currentTime = 0;
+    }
+  };
+  // Stop playback directly rather than relying on the dialog's `close` event,
+  // which some browsers don't fire reliably.
+  const close = () => {
+    stop();
+    dialogRef.current?.close();
+  };
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const onCancel = (e: Event) => {
+      e.preventDefault();
+      close();
+    };
+    dialog.addEventListener("cancel", onCancel);
+    dialog.addEventListener("close", stop);
+    return () => {
+      dialog.removeEventListener("cancel", onCancel);
+      dialog.removeEventListener("close", stop);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <>
+      <button type="button" className="video-cover" onClick={open} aria-label={`Play video: ${title}`}>
+        {children}
+        <span className="play-badge" aria-hidden="true">
+          <span className="play-disc"><svg viewBox="0 0 24 24" width="30" height="30"><path d="M8 5v14l11-7z" fill="currentColor" /></svg></span>
+          <span className="play-label">Watch{duration ? ` · ${duration}` : ""}</span>
+        </span>
+      </button>
+      <dialog ref={dialogRef} className="video-modal" aria-label={title} onClick={(e) => e.target === e.currentTarget && close()} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); close(); } }}>
+        <button type="button" className="video-close" onClick={close}>Close <span aria-hidden="true">✕</span></button>
+        <video ref={videoRef} src={video} controls playsInline preload="none" />
+      </dialog>
+    </>
+  );
+}
+
 function IssueRow({ issue, n }: { issue: Issue; n: number }) {
   const { note, share, post, email } = useShare();
   const id = `issue-${n}`;
   const url = () => pageUrl(`#${id}`);
+  const photo = <img src={issue.image} alt={issue.alt} width={issue.imageWidth} height={issue.imageHeight} loading="lazy" decoding="async" />;
   return (
     <article id={id} data-claim={n} className={`claim ${theme(n)}${n % 2 === 0 ? " flip" : ""}`} aria-labelledby={`${id}-title`}>
-      <div className="claim-photo"><img src={issue.image} alt={issue.alt} width={issue.imageWidth} height={issue.imageHeight} loading="lazy" decoding="async" /></div>
+      <div className="claim-photo">{issue.video ? <VideoCover video={issue.video} title={issue.videoTitle ?? issue.title} duration={issue.videoDuration}>{photo}</VideoCover> : photo}</div>
       <div className="claim-copy">
         <div className="claim-meta"><span className="badge">{pad(n)} / {issues.length}</span><span>{issue.topic}</span></div>
         <h2 id={`${id}-title`}>{issue.title}</h2>
@@ -195,7 +249,7 @@ function Page() {
               <p>When constituents speak up, they deserve answers and solutions—not insults, personal attacks, or political games.</p>
               <p>Moise’s confrontational approach and hostile exchanges with constituents have made him one of the most polarizing figures at City Hall. His record has left many residents asking a simple question: <strong>Is this really the representation Ward 13 deserves?</strong></p>
               <p>And the state of the ward speaks for itself. Residents are dealing with enormous concerns about crime, cleanliness, public drug use, disorder, and parks and public spaces that no longer feel welcoming or safe for everyone.</p>
-              <figure className="case-figure"><img src={caseWardImage} width={1079} height={819} loading="lazy" decoding="async" alt="Abandoned furniture, tarps and debris piled in a Toronto Centre laneway in front of residential towers" /><figcaption>The state of the ward: a Toronto Centre laneway.</figcaption></figure>
+              <figure className="case-figure"><VideoCover video={caseWardVideo} title="The state of the ward: drug use at the St. James Park playground" duration="0:29"><img src={caseWardImage} width={1079} height={819} loading="lazy" decoding="async" alt="Abandoned furniture, tarps and debris piled in a Toronto Centre laneway in front of residential towers" /></VideoCover><figcaption>The state of the ward. Tap the photo to watch residents’ video from the ward.</figcaption></figure>
               <p>After four years, the question is not whether Chris Moise deserves another term.</p>
               <p><strong>It’s whether Ward 13 can afford another four years of the same.</strong></p>
               <blockquote className="verdict"><span>Ward 13 deserves better.</span><strong>Chris Moise does not deserve to be rewarded with re-election.</strong></blockquote>
@@ -240,6 +294,7 @@ function Page() {
             <h2>Sources</h2>
             <ol>
               <li id="src-cbc">CBC News, September 2024 campaign-finance reporting <small className="pending">Link pending</small></li>
+              <li id="src-ctv-poll"><a href="https://www.ctvnews.ca/toronto/article/public-support-strikingly-bad-for-renaming-of-yonge-dundas-square-to-sankofa-square-poll/" target="_blank" rel="noopener noreferrer">CTV News, poll on renaming Yonge-Dundas Square to Sankofa Square</a></li>
               <li id="src-cbc-bhp">CBC News, September 3, 2026, Barbara Hall Park <small className="pending">Link pending</small></li>
               <li id="src-sun">Toronto Sun, Moss Park Arena <small className="pending">Link pending</small></li>
               <li id="src-sun-expenses">Toronto Sun, councillor expenses (Moise total $1,081,639) <small className="pending">Link pending</small></li>
