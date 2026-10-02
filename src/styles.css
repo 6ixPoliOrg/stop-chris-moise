@@ -201,19 +201,20 @@ textarea:focus {
   flex-wrap: wrap;
   gap: 12px;
 }
-.pending {
+.paywall {
   display: inline-block;
-  margin-left: 0.4em;
-  background: var(--red);
-  color: var(--paper);
-  padding: 2px 7px;
+  margin-left: 0.35em;
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
   font-family: var(--display);
-  font-weight: 700;
-  font-size: 12px;
+  font-weight: 600;
+  font-size: 11px;
   letter-spacing: 0.08em;
-  line-height: 1.4;
+  line-height: 1.5;
   text-transform: uppercase;
   vertical-align: 1px;
+  opacity: 0.75;
 }
 
 /* ------------------------------------------------------------
@@ -957,6 +958,18 @@ textarea:focus {
   color: var(--lbl);
   margin-right: 0.35em;
 }
+.sources .source-link:not(:last-of-type)::after,
+.sources .source-link + a::before {
+  content: " · ";
+}
+.sources .source-link + a::before {
+  text-decoration: none;
+  display: inline-block;
+  padding-right: 0.25em;
+}
+.sources a {
+  overflow-wrap: anywhere;
+}
 .share-row {
   display: flex;
   gap: 6px;
@@ -1212,6 +1225,40 @@ textarea:focus {
   list-style: decimal;
   font-size: 14px;
   line-height: 1.55;
+}
+.foot-sources .source-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 24px 40px;
+  padding-left: 0;
+  list-style: none;
+}
+.source-groups > li {
+  scroll-margin-top: calc(var(--nav-h) + 16px);
+}
+.source-groups h3 {
+  margin: 0 0 8px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--yellow);
+}
+.source-groups ul {
+  margin: 0;
+  padding-left: 1.1em;
+  list-style: disc;
+}
+.source-groups ul li {
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
+}
+.source-groups cite {
+  font-style: normal;
+}
+.source-groups .source-meta {
+  opacity: 0.8;
 }
 .foot-sources li::marker {
   color: var(--yellow);

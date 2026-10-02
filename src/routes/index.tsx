@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "rea
 import { PasswordGate } from "@/components/PasswordGate";
 import heroImage from "@/assets/campaign-hero.jpg";
 import skylineImage from "@/assets/skyline.jpg";
-import { issues, pad, pageUrl, useShare, caseWardImage, caseWardVideo, type Issue } from "@/content/record";
+import { issues, pad, pageUrl, useShare, caseWardImage, caseWardVideo, type Issue, type SourceLink } from "@/content/record";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -26,6 +26,21 @@ const theme = (n: number) => (["t-purple", "t-paper", "t-yellow"] as const)[(n -
 function Wordmark({ href }: { href?: string }) {
   const inner = <><span className="stop">Stop</span><span>Chris Moise</span></>;
   return href ? <a className="wordmark" href={href} aria-label="Stop Chris Moise home">{inner}</a> : <span className="wordmark">{inner}</span>;
+}
+
+/** Inline sources shown per issue; the rest are listed in the footer. */
+const INLINE_SOURCES = 4;
+
+function SourceAnchor({ src, short = false }: { src: SourceLink; short?: boolean }) {
+  const meta = [src.outlet, src.date].filter(Boolean).join(", ");
+  return (
+    <span className="source-link">
+      <a href={src.url} target="_blank" rel="noopener noreferrer" title={short ? src.title : undefined}>
+        {short ? meta : <><cite>{src.title}</cite> <span className="source-meta">{meta}</span></>}
+      </a>
+      {src.paywall && <small className="paywall">Subscription</small>}
+    </span>
+  );
 }
 
 /** Cover image with a play button; opens the video in a modal dialog. */
@@ -98,7 +113,13 @@ function IssueRow({ issue, n }: { issue: Issue; n: number }) {
           <h3 className="sub dash">Why it matters</h3>{issue.matters}
           {issue.simple && <div className="simple"><h3 className="sub">The Coles Notes</h3><p>{issue.simple}</p></div>}
         </div>
-        <p className="sources"><strong>Source:</strong><a href={issue.sourceId ? `#${issue.sourceId}` : "#sources"}>{issue.source}</a>{!issue.sourceId && <small className="pending">Link pending</small>}</p>
+        <p className="sources">
+          <strong>Sources:</strong>
+          {issue.sources.slice(0, INLINE_SOURCES).map((src) => (
+            <SourceAnchor key={src.url} src={src} short />
+          ))}
+          {issue.sources.length > INLINE_SOURCES && <a href={`#sources-${id}`}>+{issue.sources.length - INLINE_SOURCES} more</a>}
+        </p>
         <div className="share-row">
           <button type="button" onClick={() => share(issue.title, url())}>Share</button>
           <button type="button" onClick={() => post(issue.title, url())}>Post</button>
@@ -292,17 +313,17 @@ function Page() {
           <p className="foot-note">This page is political advocacy. It summarizes news reports, public meetings, Council records, and the Integrity Commissioner’s March 20, 2026 finding. A donation is not proof of a crime. Where this page describes conflict-of-interest concerns, it is raising a question about trust, not announcing a court verdict.</p>
           <div className="foot-sources">
             <h2>Sources</h2>
-            <ol>
-              <li id="src-cbc">CBC News, September 2024 campaign-finance reporting <small className="pending">Link pending</small></li>
-              <li id="src-ctv-poll"><a href="https://www.ctvnews.ca/toronto/article/public-support-strikingly-bad-for-renaming-of-yonge-dundas-square-to-sankofa-square-poll/" target="_blank" rel="noopener noreferrer">CTV News, poll on renaming Yonge-Dundas Square to Sankofa Square</a></li>
-              <li id="src-cbc-bhp">CBC News, September 3, 2026, Barbara Hall Park <small className="pending">Link pending</small></li>
-              <li id="src-sun">Toronto Sun, Moss Park Arena <small className="pending">Link pending</small></li>
-              <li id="src-sun-expenses">Toronto Sun, councillor expenses (Moise total $1,081,639) <small className="pending">Link pending</small></li>
-              <li id="src-sun-decals">Toronto Sun, August 31, 2025, sidewalk decals <small className="pending">Link pending</small></li>
-              <li id="src-ic">City of Toronto Integrity Commissioner finding, March 20, 2026; CBC News, March 22, 2026 <small className="pending">Link pending</small></li>
-              <li id="src-raves">Aidan Chamandy, April 23, 2025, rave-motion withdrawal <small className="pending">Link pending</small></li>
-              <li id="src-budget">Council budget and expense records <small className="pending">Link pending</small></li>
-              <li id="src-chw">City Hall Watcher, Chow voting alignment <small className="pending">Link pending</small></li>
+            <ol className="source-groups">
+              {issues.map((issue, i) => (
+                <li key={issue.title} id={`sources-issue-${i + 1}`}>
+                  <h3>{pad(i + 1)} {issue.topic}</h3>
+                  <ul>
+                    {issue.sources.map((src) => (
+                      <li key={src.url}><SourceAnchor src={src} /></li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
             </ol>
           </div>
           <p className="election-date">Municipal election: <strong>October 26, 2026.</strong></p>
