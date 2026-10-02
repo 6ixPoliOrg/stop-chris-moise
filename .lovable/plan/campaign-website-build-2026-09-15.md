@@ -2,7 +2,7 @@
 
 ## What I’ll build
 - Recreate the supplied single-page campaign site at `/`, following the mockups’ bold black, red, and yellow editorial style.
-- Include the announcement bar, sticky wordmark/menu, full-screen photographic opening, campaign case, ten-item record, election callout, coalition form, and sources footer.
+- Include the announcement bar, sticky wordmark/menu, full-screen photographic opening, campaign case, eleven-item record, election callout, coalition form, and sources footer.
 - Preserve the supplied wording and source placeholders from the HTML while making the structure easier to scan across desktop and mobile.
 - Add polished, cohesive campaign imagery inspired by the mockups without embedding the screenshots themselves.
 
